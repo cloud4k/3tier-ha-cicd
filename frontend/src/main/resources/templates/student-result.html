@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Student Submitted</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f6f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            background: white;
+            padding: 30px;
+            width: 500px;
+            border-radius: 10px;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        .row {
+            margin-bottom: 15px;
+        }
+
+        .label {
+            font-weight: bold;
+        }
+
+        .button {
+            display: block;
+            text-align: center;
+            margin-top: 20px;
+            padding: 12px;
+            text-decoration: none;
+            border: 1px solid #ccc;
+        }
+    </style>
+
+</head>
+<body>
+
+<div class="container">
+
+    <h1>Student Successfully Submitted</h1>
+
+    <div class="row">
+        <span class="label">Student ID:</span>
+        <span th:text="${student.studentId}"></span>
+    </div>
+
+    <div class="row">
+        <span class="label">First Name:</span>
+        <span th:text="${student.firstName}"></span>
+    </div>
+
+    <div class="row">
+        <span class="label">Last Name:</span>
+        <span th:text="${student.lastName}"></span>
+    </div>
+
+    <div class="row">
+        <span class="label">Email:</span>
+        <span th:text="${student.email}"></span>
+    </div>
+
+    <div class="row">
+        <span class="label">Phone Number:</span>
+        <span th:text="${student.phoneNumber}"></span>
+    </div>
+
+    <a class="button" th:href="@{/}">
+        Register Another Student
+    </a>
+
+</div>
+
+</body>
+</html>

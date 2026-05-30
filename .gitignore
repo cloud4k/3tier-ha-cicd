@@ -1,0 +1,11 @@
+.terraform/
+*.tfstate
+*.tfstate.*
+.terraform.lock.hcl
+.DS_Store
+target/
+*.class
+*.war
+*.jar
+.env
+*.pem
