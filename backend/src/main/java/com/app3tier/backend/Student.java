@@ -1,8 +1,16 @@
 package com.app3tier.backend;
 
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+
+@Entity
+@Table(name = "students")
 public class Student {
 
+    @Id
     private String studentId;
+
     private String firstName;
     private String lastName;
     private String email;

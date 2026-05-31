@@ -2,34 +2,30 @@ package com.app3tier.backend;
 
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/students")
 public class StudentController {
 
-    private final List<Student> students = new ArrayList<>();
+    private final StudentRepository studentRepository;
+
+    public StudentController(StudentRepository studentRepository) {
+        this.studentRepository = studentRepository;
+    }
 
     @GetMapping
     public List<Student> getAllStudents() {
-        return students;
+        return studentRepository.findAll();
     }
 
     @GetMapping("/{studentId}")
     public Student getStudent(@PathVariable String studentId) {
-
-        return students.stream()
-                .filter(student -> student.getStudentId().equals(studentId))
-                .findFirst()
-                .orElse(null);
+        return studentRepository.findById(studentId).orElse(null);
     }
 
     @PostMapping
     public Student createStudent(@RequestBody Student student) {
-
-        students.add(student);
-
-        return student;
+        return studentRepository.save(student);
     }
 }

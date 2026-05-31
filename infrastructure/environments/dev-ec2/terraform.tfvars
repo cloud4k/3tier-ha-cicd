@@ -20,7 +20,7 @@ db_name = "appdb"
 
 db_username = "admin"
 
-db_password = "ChangeThisPassword123!"
+db_password = "StudentsApp1234$"
 
 db_instance_class = "db.t3.micro"
 
