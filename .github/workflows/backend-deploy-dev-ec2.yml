@@ -15,7 +15,6 @@ jobs:
 
     env:
       AWS_REGION: us-east-1
-      BACKEND_ASG_NAME: 3tier-ha-cicd-dev-ec2-backend-asg
 
     steps:
       - name: Checkout code
@@ -65,20 +64,25 @@ jobs:
         run: |
           aws s3 cp backend/target/backend.war s3://$ARTIFACT_BUCKET/backend/backend.war
 
-      - name: Get current backend instances
+      - name: Get current backend target group instances
         run: |
-          BACKEND_INSTANCES=$(aws autoscaling describe-auto-scaling-groups \
-            --auto-scaling-group-names $BACKEND_ASG_NAME \
-            --query "AutoScalingGroups[0].Instances[?LifecycleState=='InService' && HealthStatus=='Healthy'].InstanceId" \
+          BACKEND_TG_ARN=$(aws elbv2 describe-target-groups \
+            --names backend-tg \
+            --query "TargetGroups[0].TargetGroupArn" \
+            --output text)
+
+          BACKEND_INSTANCES=$(aws elbv2 describe-target-health \
+            --target-group-arn $BACKEND_TG_ARN \
+            --query "TargetHealthDescriptions[?TargetHealth.State=='healthy'].Target.Id" \
             --output text)
 
           if [ -z "$BACKEND_INSTANCES" ]; then
-            echo "No healthy backend instances found"
+            echo "No healthy backend target group instances found"
             exit 1
           fi
 
           echo "BACKEND_INSTANCES=$BACKEND_INSTANCES" >> $GITHUB_ENV
-          echo "Backend instances: $BACKEND_INSTANCES"
+          echo "Backend target instances: $BACKEND_INSTANCES"
 
       - name: Deploy backend WAR to Tomcat
         run: |
@@ -115,22 +119,3 @@ jobs:
       - name: Verify backend through ALB
         run: |
           curl http://$ALB_DNS_NAME/students
-            - name: Get current backend target group instances
-        run: |
-          BACKEND_TG_ARN=$(aws elbv2 describe-target-groups \
-            --names backend-tg \
-            --query "TargetGroups[0].TargetGroupArn" \
-            --output text)
-
-          BACKEND_INSTANCES=$(aws elbv2 describe-target-health \
-            --target-group-arn $BACKEND_TG_ARN \
-            --query "TargetHealthDescriptions[?TargetHealth.State=='healthy'].Target.Id" \
-            --output text)
-
-          if [ -z "$BACKEND_INSTANCES" ]; then
-            echo "No healthy backend target group instances found"
-            exit 1
-          fi
-
-          echo "BACKEND_INSTANCES=$BACKEND_INSTANCES" >> $GITHUB_ENV
-          echo "Backend target instances: $BACKEND_INSTANCES"
