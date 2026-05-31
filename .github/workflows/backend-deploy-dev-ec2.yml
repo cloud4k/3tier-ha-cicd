@@ -31,12 +31,13 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
-        terraform_wrapper: false
-         - name: Terraform Init
+          terraform_wrapper: false
+
+      - name: Terraform Init
         working-directory: infrastructure/environments/dev-ec2
         run: terraform init -reconfigure
 
-         - name: Get Terraform outputs
+      - name: Get Terraform outputs
         working-directory: infrastructure/environments/dev-ec2
         run: |
           ARTIFACT_BUCKET_VALUE=$(terraform output -raw artifact_bucket_name)
@@ -44,6 +45,8 @@ jobs:
 
           echo "ARTIFACT_BUCKET=$ARTIFACT_BUCKET_VALUE" >> $GITHUB_ENV
           echo "ALB_DNS_NAME=$ALB_DNS_NAME_VALUE" >> $GITHUB_ENV
+
+      - name: Debug deployment variables
         run: |
           echo "ARTIFACT_BUCKET=$ARTIFACT_BUCKET"
           echo "ALB_DNS_NAME=$ALB_DNS_NAME"
