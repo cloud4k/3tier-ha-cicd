@@ -25,3 +25,6 @@ output "frontend_launch_template_id" {
 output "frontend_autoscaling_group_name" {
   value = module.ec2_frontend.autoscaling_group_name
 }
+output "artifact_bucket_name" {
+  value = module.s3_artifacts.bucket_name
+}

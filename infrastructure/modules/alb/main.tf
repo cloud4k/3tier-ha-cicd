@@ -24,14 +24,14 @@ resource "aws_lb_target_group" "frontend" {
   vpc_id   = var.vpc_id
 
   health_check {
-    path                = "/"
-    protocol            = "HTTP"
-    matcher             = "200"
-    healthy_threshold   = 2
-    unhealthy_threshold = 2
-    interval            = 30
-    timeout             = 5
-  }
+  path                = "/"
+  protocol            = "HTTP"
+  matcher             = "200"
+  healthy_threshold   = 2
+  unhealthy_threshold = 2
+  interval            = 30
+  timeout             = 5
+}
 
   tags = {
     Name = "frontend-target-group"
@@ -82,7 +82,7 @@ resource "aws_lb_listener_rule" "backend" {
 
   condition {
     path_pattern {
-      values = ["/api/*", "/backend/*"]
+      values = ["/students", "/students/*"]
     }
   }
 }

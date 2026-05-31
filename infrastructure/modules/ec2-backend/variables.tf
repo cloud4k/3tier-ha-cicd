@@ -29,3 +29,6 @@ variable "backend_sg_id" {
 variable "backend_target_group_arn" {
   type = string
 }
+variable "instance_profile_name" {
+  type = string
+}

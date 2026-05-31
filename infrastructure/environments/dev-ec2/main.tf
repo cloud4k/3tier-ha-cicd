@@ -98,6 +98,7 @@ module "ec2_backend" {
   backend_sg_id = module.security_groups.backend_sg_id
 
   backend_target_group_arn = module.alb.backend_target_group_arn
+  instance_profile_name    = module.iam.instance_profile_name
 }
 module "ec2_frontend" {
   source = "../../modules/ec2-frontend"
@@ -114,4 +115,18 @@ module "ec2_frontend" {
   frontend_sg_id = module.security_groups.frontend_sg_id
 
   frontend_target_group_arn = module.alb.frontend_target_group_arn
+  instance_profile_name     = module.iam.instance_profile_name
+}
+module "s3_artifacts" {
+  source = "../../modules/s3-artifacts"
+
+  project_name = var.project_name
+  environment  = var.environment
+}
+module "iam" {
+  source = "../../modules/iam"
+
+  project_name         = var.project_name
+  environment          = var.environment
+  artifact_bucket_name = module.s3_artifacts.bucket_name
 }

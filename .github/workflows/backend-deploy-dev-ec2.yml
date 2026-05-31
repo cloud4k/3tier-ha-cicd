@@ -70,10 +70,9 @@ jobs:
             --names backend-tg \
             --query "TargetGroups[0].TargetGroupArn" \
             --output text)
-
           BACKEND_INSTANCES=$(aws elbv2 describe-target-health \
             --target-group-arn $BACKEND_TG_ARN \
-            --query "TargetHealthDescriptions[?TargetHealth.State=='healthy'].Target.Id" \
+            --query "TargetHealthDescriptions[?TargetHealth.State!='draining'].Target.Id" \
             --output text)
 
           if [ -z "$BACKEND_INSTANCES" ]; then

@@ -1,5 +1,6 @@
 package com.app3tier.frontend;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -9,8 +10,8 @@ import org.springframework.web.client.RestTemplate;
 public class StudentController {
 
     private final RestTemplate restTemplate = new RestTemplate();
-
-    private final String backendApiUrl = "http://localhost:8081/api/students";
+    @Value("${backend.api.url}")
+     private String backendApiUrl;
 
     @GetMapping("/")
     public String showForm(Model model) {

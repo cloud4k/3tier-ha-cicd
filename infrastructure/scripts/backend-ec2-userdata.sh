@@ -33,6 +33,7 @@ Environment="JAVA_HOME=/usr/lib/jvm/java-21-amazon-corretto"
 Environment="CATALINA_PID=/opt/tomcat11/temp/tomcat.pid"
 Environment="CATALINA_HOME=/opt/tomcat11"
 Environment="CATALINA_BASE=/opt/tomcat11"
+Environment="SPRING_PROFILES_ACTIVE=aws"
 
 ExecStart=/bin/bash /opt/tomcat11/bin/startup.sh
 ExecStop=/bin/bash /opt/tomcat11/bin/shutdown.sh
