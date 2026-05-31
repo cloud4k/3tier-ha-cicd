@@ -31,7 +31,10 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
-          terraform_wrapper: false
+        terraform_wrapper: false
+         - name: Terraform Init
+        working-directory: infrastructure/environments/dev-ec2
+        run: terraform init -reconfigure
 
       - name: Get Terraform outputs
         working-directory: infrastructure/environments/dev-ec2
