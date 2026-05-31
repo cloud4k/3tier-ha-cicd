@@ -1,0 +1,122 @@
+name: Deploy Frontend Dev EC2
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "frontend/**"
+      - ".github/workflows/frontend-deploy-dev-ec2.yml"
+  workflow_dispatch:
+
+jobs:
+  deploy-frontend:
+    runs-on: ubuntu-latest
+
+    env:
+      AWS_REGION: us-east-1
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
+      - name: Terraform Init
+        working-directory: infrastructure/environments/dev-ec2
+        run: terraform init -reconfigure
+
+      - name: Get Terraform outputs
+        working-directory: infrastructure/environments/dev-ec2
+        run: |
+          ARTIFACT_BUCKET_VALUE=$(terraform output -raw artifact_bucket_name)
+          ALB_DNS_NAME_VALUE=$(terraform output -raw alb_dns_name)
+
+          echo "ARTIFACT_BUCKET=$ARTIFACT_BUCKET_VALUE" >> $GITHUB_ENV
+          echo "ALB_DNS_NAME=$ALB_DNS_NAME_VALUE" >> $GITHUB_ENV
+
+      - name: Inject backend API URL
+        run: |
+          echo "server.port=8080" > frontend/src/main/resources/application-aws.properties
+          echo "backend.api.url=http://$ALB_DNS_NAME/students" >> frontend/src/main/resources/application-aws.properties
+          cat frontend/src/main/resources/application-aws.properties
+
+      - name: Setup Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: corretto
+          java-version: 21
+
+      - name: Build frontend WAR
+        working-directory: frontend
+        run: mvn clean package
+
+      - name: Upload frontend WAR to S3
+        run: |
+          aws s3 cp frontend/target/frontend.war s3://$ARTIFACT_BUCKET/frontend/frontend.war
+
+      - name: Get current frontend target group instances
+        run: |
+          FRONTEND_TG_ARN=$(aws elbv2 describe-target-groups \
+            --names frontend-tg \
+            --query "TargetGroups[0].TargetGroupArn" \
+            --output text)
+
+          FRONTEND_INSTANCES=$(aws elbv2 describe-target-health \
+            --target-group-arn $FRONTEND_TG_ARN \
+            --query "TargetHealthDescriptions[?TargetHealth.State!='draining'].Target.Id" \
+            --output text)
+
+          if [ -z "$FRONTEND_INSTANCES" ]; then
+            echo "No frontend target group instances found"
+            exit 1
+          fi
+
+          echo "FRONTEND_INSTANCES=$FRONTEND_INSTANCES" >> $GITHUB_ENV
+          echo "Frontend target instances: $FRONTEND_INSTANCES"
+
+      - name: Deploy frontend WAR to Tomcat
+        run: |
+          COMMAND_ID=$(aws ssm send-command \
+            --document-name "AWS-RunShellScript" \
+            --instance-ids $FRONTEND_INSTANCES \
+            --parameters 'commands=[
+              "sudo systemctl stop tomcat",
+              "sudo rm -rf /opt/tomcat11/webapps/ROOT /opt/tomcat11/webapps/ROOT.war /opt/tomcat11/webapps/frontend /opt/tomcat11/webapps/frontend.war",
+              "aws s3 cp s3://'"$ARTIFACT_BUCKET"'/frontend/frontend.war /tmp/ROOT.war",
+              "sudo mv /tmp/ROOT.war /opt/tomcat11/webapps/ROOT.war",
+              "sudo chown tomcat:tomcat /opt/tomcat11/webapps/ROOT.war",
+              "sudo systemctl start tomcat",
+              "sleep 20",
+              "curl -I http://localhost:8080/"
+            ]' \
+            --comment "Deploy frontend WAR as ROOT" \
+            --query "Command.CommandId" \
+            --output text)
+
+          echo "COMMAND_ID=$COMMAND_ID" >> $GITHUB_ENV
+          echo "Frontend deployment command ID: $COMMAND_ID"
+
+      - name: Check frontend deployment command
+        run: |
+          sleep 30
+
+          aws ssm list-command-invocations \
+            --command-id $COMMAND_ID \
+            --details \
+            --query "CommandInvocations[*].[InstanceId,Status,CommandPlugins[0].Output,CommandPlugins[0].StandardErrorContent]" \
+            --output table
+
+      - name: Verify frontend through ALB
+        run: |
+          curl -I http://$ALB_DNS_NAME/
